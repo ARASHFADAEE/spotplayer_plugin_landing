@@ -1,0 +1,214 @@
+
+@font-face {
+    font-family: 'IRANYekanXVF';
+    src: url('../fonts/IRANYekanXVFaNumVF.woff') format('woff-variations'),
+    /* will be the standard and works in Safari now */
+    url('../fonts/IRANYekanXVFaNumVF.woff2') format('woff');
+    /* for the other supporting browsers */
+    font-weight: 100 1000;
+    font-display: fallback;
+    font-variation-settings: "wght" 400, "dots" 1
+
+}
+
+
+
+
+.iranyekanxv-easey-sell{
+    font-family: 'IRANYekanXVF' !important;
+}
+
+.box-sell {
+    width: 596px;
+    margin-right: auto;
+    margin-left: auto;
+    border-radius: 35px 35px 35px 35px;
+    background: #ffff;
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row-reverse;
+    justify-content: space-around;
+    align-content: center;
+    align-items: center;
+    font-family: 'IRANYekanXVF';
+}
+
+
+.img-banner img {
+    width: 172px;
+    height: 172px;
+    border-radius: 12px;
+}
+
+
+
+.title-description {
+    direction: rtl;
+    padding-right: 28px;
+    font-family: 'IRANYekanXVF';
+}
+
+/* =======================
+   استایل‌های تکمیلی لندینگ
+   ======================= */
+
+/* متغیرهای رنگ و اندازه برای مدیریت راحت‌تر طراحی */
+:root {
+    --color-bg: #f6f8fb;
+    --color-text: #1f2937;
+    --color-muted: #8a94a6;
+    --color-white: #ffffff;
+    --color-teal: #22c6b7; /* دکمه خرید */
+    --color-teal-d: #17aa9b;
+    --color-yellow: #f7c948; /* دکمه بررسی کد تخفیف */
+    --color-yellow-d: #e7b93a;
+    --radius-card: 35px;
+    --radius: 12px;
+    --shadow-card: 0 14px 30px rgba(31, 45, 65, 0.12);
+}
+
+/* ریست و تنظیمات پایه */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+/* متن مخفی برای دسترس‌پذیری در کنار placeholder */
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+}
+
+/* ناحیه لندینگ برای مرکز کردن کارت */
+.landing {
+    padding: 48px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* کارت اصلی محصول مطابق تصویر مرجع */
+.box-sell {
+    width: min(596px, 92vw);
+    margin: 0 auto;
+    border-radius: var(--radius-card);
+    background: var(--color-white);
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column; /* هدر بالا، فرم پایین */
+    gap: 14px;
+    padding: 22px;
+}
+
+/* هدر باکس: تصویر سمت راست و توضیحات سمت چپ */
+.box-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* تصویر کاور دوره */
+.img-banner img {
+    width: 172px;
+    height: 172px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* بخش عنوان و توضیحات */
+.title-description { direction: rtl; padding-right: 8px; }
+.product-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 10px 0;
+}
+.product-desc {
+    font-size: 14px;
+    line-height: 2;
+    color: var(--color-text);
+    margin: 0 0 14px 0;
+}
+
+/* ناحیه قیمت: قیمت جدید و قیمت قدیم خط‌خورده */
+.price {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.price-current { font-size: 20px; font-weight: 800; }
+.price-currency { font-size: 14px; color: var(--color-text); }
+.price-old { font-size: 14px; color: var(--color-muted); text-decoration: line-through; }
+
+/* فرم خرید */
+.purchase-form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.form-group { width: 100%; }
+.form-inline { display: grid; grid-template-columns: 1fr 160px; gap: 10px; }
+
+/* استایل ورودی‌ها مطابق تصویر مرجع */
+input[type="text"], input[type="tel"] {
+    width: 100%;
+    height: 52px;
+    background: #f9fafb;
+    border: 1px solid #e6e8ee;
+    border-radius: var(--radius);
+    padding: 0 16px;
+    font-size: 14px;
+    color: var(--color-text);
+    direction: rtl;
+    font-family: 'IRANYekanXVF' !important;
+    text-align: right; /* راست‌چین سازگار با فارسی */
+
+}
+input::placeholder { color: var(--color-muted); }
+input:focus {
+    outline: none;
+    border-color: var(--color-teal);
+    box-shadow: 0 0 0 3px rgba(34, 198, 183, 0.15);
+}
+
+/* دکمه‌ها */
+.btn {
+    height: 52px;
+    border: 0;
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .2s ease, transform .08s ease;
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-coupon {
+    background: var(--color-yellow);
+    color: #2e2e2e;
+        font-family: 'IRANYekanXVF' !important;
+
+}
+.btn-coupon:hover { background: var(--color-yellow-d);     font-family: 'IRANYekanXVF' !important;
+}
+
+.btn-buy {
+    background: var(--color-teal);
+    color: var(--color-white);
+        font-family: 'IRANYekanXVF' !important;
+    width: 100%; /* تمام‌عرض */
+
+}
+.btn-buy:hover { background: var(--color-teal-d);     font-family: 'IRANYekanXVF' !important;
+}
+
+
+
+/* ریسپانسیو */
+@media (max-width: 640px) {
+    .box-sell { flex-direction: column; text-align: center; padding: 18px; }
+    .box-header { flex-direction: column; }
+    .title-description { padding-right: 0; }
+    .form-inline { grid-template-columns: 1fr; }
+}
