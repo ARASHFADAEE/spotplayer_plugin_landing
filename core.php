@@ -36,6 +36,16 @@ define('LAND_PLUGIN_ASSETS_URL', LAND_PLUGIN_URL . 'assets/');
 define('LAND_PLUGIN_INC', LAND_PLUGIN_DIR . 'inc/');
 
 
+
+/**
+ * include denpedenci
+ */
+
+include_once LAND_PLUGIN_INC."/card-by-card.php";
+include_once LAND_PLUGIN_INC."/shortcode.php";
+include_once LAND_PLUGIN_INC."/spotplayer.php";
+
+
 /**
  * 
  * set option meta
@@ -44,13 +54,13 @@ define('LAND_PLUGIN_INC', LAND_PLUGIN_DIR . 'inc/');
  */
 
 function data_meta_option(){
-    update_option('product_id','');
+    update_option('product_id',213);
     update_option('color-btn','green');
     update_option('is_copon',0);
-    update_option('zibal',0);
-
-
+    update_option('is_zibal',0);
+    update_option('is_card',0);
 }
+
 
 /**
  * register_activation_hook for plugin
@@ -86,6 +96,9 @@ function spotplayer_landing_enqueue_scripts()
 
         wp_localize_script('spotplayer-landing-script', 'spotplayerLanding', array(
             'ajax_url' => admin_url('admin-ajax.php'),
+            'product_id'=> get_option('product_id'),
+            'is_zibal'=>get_option('is_zibal'),
+            'is_card'=>get_option('is_card'),
         ));
     
 }
