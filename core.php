@@ -39,10 +39,21 @@ define('LAND_PLUGIN_INC', LAND_PLUGIN_DIR . 'inc/');
 
 /**
  * include denpedenci
+ * 
+ * @return void
  */
 
 include_once LAND_PLUGIN_INC."/card-by-card.php";
 include_once LAND_PLUGIN_INC."/spotplayer.php";
+
+
+/**
+ * include codestar framework
+ * 
+ * @return void
+ */
+include_once LAND_PLUGIN_DIR."/codestar/codestar-framework.php";
+include_once LAND_PLUGIN_INC."/admin.php";
 
 
 /**
@@ -98,6 +109,7 @@ function spotplayer_landing_enqueue_scripts()
         wp_enqueue_style('spotplayer-landing-style', LAND_PLUGIN_ASSETS_URL . 'css/style.css');
         wp_enqueue_script('spotplayer-landing-script', LAND_PLUGIN_ASSETS_URL . 'js/main.js', array('jquery'), '1.0.0', true);
 
+        
         /**
          * 
          * localize script
