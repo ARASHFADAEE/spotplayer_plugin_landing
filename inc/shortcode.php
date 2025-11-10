@@ -1,3 +1,10 @@
+<?php
+// Prevent fatal if WooCommerce functions are not yet available
+if (!function_exists('wc_get_product')) {
+    echo '<div class="landing"><div class="box-sell" style="padding:16px">ووکامرس فعال نیست یا هنوز بارگذاری نشده است.</div></div>';
+    return;
+}
+?>
     <main class="landing" role="main">
 <?php if(!empty(get_option('product_id'))):
             $product_id=get_option('product_id');
@@ -66,6 +73,31 @@ $product_thumbnail_url = get_the_post_thumbnail_url($product_id, 'full');
             </form>
 
         </article>
+
+        <!-- Modal: Card-to-card submit -->
+        <div id="card-modal" class="spl-modal" aria-hidden="true" role="dialog" aria-labelledby="cardModalTitle">
+            <div class="spl-modal__dialog">
+                <div class="spl-modal__header">
+                    <h2 id="cardModalTitle" class="spl-modal__title">پرداخت کارت به کارت</h2>
+                    <button type="button" class="spl-modal__close" aria-label="بستن">×</button>
+                </div>
+                <div class="spl-modal__body">
+                    <p class="spl-modal__desc">لطفاً مبلغ دوره را به کارت زیر واریز کنید و رسید را بارگذاری نمایید.</p>
+                    <div class="spl-card-info">
+                        <div><strong>شماره کارت:</strong> <span id="splCardNumber"></span></div>
+                        <div><strong>به نام:</strong> <span id="splCardHolder"></span></div>
+                    </div>
+                    <div class="spl-upload">
+                        <label for="receipt">آپلود تصویر رسید بانکی</label>
+                        <input type="file" id="receipt" name="receipt" accept="image/*" />
+                    </div>
+                    <div class="spl-modal__actions">
+                        <button type="button" class="btn btn-buy" id="splSubmitCard">ثبت رسید</button>
+                    </div>
+                    <div class="spl-modal__feedback" id="splModalFeedback" role="status" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
 
 
         <?php endif?>
