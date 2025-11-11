@@ -55,8 +55,33 @@ include_once LAND_PLUGIN_INC."/spotplayer.php";
  * 
  * @return void
  */
-include_once LAND_PLUGIN_DIR."/codestar/codestar-framework.php";
+include_once LAND_PLUGIN_DIR."/freamwork/codestar-framework.php";
 include_once LAND_PLUGIN_INC."/admin.php";
+
+/**
+ * Elementor widget registration (conditional by settings and plugin availability)
+ */
+function spotplayer_landing_register_elementor_widget( $widgets_manager ) {
+    // Include widget class
+    $widget_file = LAND_PLUGIN_DIR . 'elementor/class-spotplayer-landing-elementor-widget.php';
+    if ( file_exists( $widget_file ) ) {
+        include_once $widget_file;
+        if ( class_exists( 'Spotplayer_Landing_Elementor_Widget' ) ) {
+            $widgets_manager->register( new \Spotplayer_Landing_Elementor_Widget() );
+        }
+    }
+}
+
+// Register the widget only if Elementor is loaded and the option is enabled
+add_action( 'plugins_loaded', function() {
+    if ( did_action( 'elementor/loaded' ) ) {
+        $csf_options = get_option( 'spotplay_land' );
+        $enabled = is_array( $csf_options ) && ! empty( $csf_options['opt-elementor-spot-land'] );
+        if ( $enabled ) {
+            add_action( 'elementor/widgets/register', 'spotplayer_landing_register_elementor_widget' );
+        }
+    }
+});
 
 
 /**

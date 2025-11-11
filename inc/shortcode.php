@@ -69,7 +69,7 @@ $product_thumbnail_url = get_the_post_thumbnail_url($product_id, 'full');
                 </div>
                 <?php endif?>
 
-                <button value="<?php esc_html($product_id)?>" type="submit" id="btn-buy-ajax" class="btn btn-buy" aria-label="خرید دوره">خرید دوره</button>
+                <button  value="<?php esc_html($product_id)?>" type="submit" id="btn-buy-ajax" class="btn btn-buy" aria-label="خرید دوره">خرید دوره</button>
             </form>
 
         </article>

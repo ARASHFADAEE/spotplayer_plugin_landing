@@ -35,8 +35,10 @@ function spl_filter_array($array)
  */
 function spl_request($url, $payload = null)
 {
-    $api_key = get_option('spotplayer_api_key');
-    $level   = get_option('spotplayer_level', '-1');
+    // Read SpotPlayer settings via Codestar options (fallback to legacy options)
+    $settings = spl_get_spotplayer_settings();
+    $api_key = isset($settings['api_key']) ? (string)$settings['api_key'] : '';
+    $level   = isset($settings['level']) ? (string)$settings['level'] : '-1';
 
     if (empty($api_key)) {
         throw new Exception(__('SpotPlayer API key is not configured.', 'spotplayer-landing'));
@@ -201,6 +203,23 @@ function spl_send_license_sms($phone, $license_key)
  */
 function spl_get_courses_option(): array
 {
+    // Prefer Codestar group option
+    $opt = get_option('spotplay_land');
+    if (is_array($opt) && !empty($opt['opt-spotplayer-courses']) && is_array($opt['opt-spotplayer-courses'])) {
+        $courses = [];
+        foreach ($opt['opt-spotplayer-courses'] as $item) {
+            if (is_array($item) && !empty($item['course_id'])) {
+                $cid = trim((string)$item['course_id']);
+                if ($cid !== '') {
+                    $courses[] = $cid;
+                }
+            }
+        }
+        if (!empty($courses)) {
+            return array_values($courses);
+        }
+    }
+    // Fallback to legacy text/textarea option
     $raw = (string)get_option('spotplayer_courses');
     if (empty($raw)) {
         return [];
@@ -324,7 +343,9 @@ function spl_handle_order_completed($order_id)
         $courses = spl_get_courses_option();
         $name = trim($order->get_formatted_billing_full_name());
         $phone = (string)$order->get_billing_phone();
-        $is_test = (bool)get_option('spotplayer_test_mode', false);
+        // Read test mode from Codestar option, fallback to legacy option
+        $opt = get_option('spotplay_land');
+        $is_test = is_array($opt) && !empty($opt['opt-spotplayer-test_mode']) ? (bool)$opt['opt-spotplayer-test_mode'] : (bool)get_option('spotplayer_test_mode', false);
         // Idempotency: avoid creating duplicate license if already exists
         $license_key = (string) $order->get_meta('_spotplayer_license_key');
 
@@ -362,6 +383,63 @@ function spl_handle_order_completed($order_id)
             error_log('[SpotPlayer] License creation failed: ' . $e->getMessage());
         }
     }
+}
+
+/**
+ * Normalize SpotPlayer settings from Codestar options with legacy fallbacks.
+ *
+ * @return array{api_key:string,level:string,courses:array,test_mode:bool}
+ */
+function spl_get_spotplayer_settings(): array
+{
+    $opt = get_option('spotplay_land');
+    $api_key = '';
+    $level = '-1';
+    $test_mode = false;
+    $courses = [];
+
+    if (is_array($opt)) {
+        if (isset($opt['opt-spotplayer-api_key'])) {
+            $api_key = (string)$opt['opt-spotplayer-api_key'];
+        }
+        if (isset($opt['opt-spotplayer-level'])) {
+            $level = (string)$opt['opt-spotplayer-level'];
+        }
+        if (!empty($opt['opt-spotplayer-test_mode'])) {
+            $test_mode = (bool)$opt['opt-spotplayer-test_mode'];
+        }
+        if (!empty($opt['opt-spotplayer-courses']) && is_array($opt['opt-spotplayer-courses'])) {
+            foreach ($opt['opt-spotplayer-courses'] as $item) {
+                if (is_array($item) && !empty($item['course_id'])) {
+                    $cid = trim((string)$item['course_id']);
+                    if ($cid !== '') {
+                        $courses[] = $cid;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallbacks to legacy options if Codestar values are not set
+    if ($api_key === '') {
+        $api_key = (string)get_option('spotplayer_api_key');
+    }
+    if ($level === '' || $level === null) {
+        $level = (string)get_option('spotplayer_level', '-1');
+    }
+    if (empty($courses)) {
+        $courses = spl_get_courses_option();
+    }
+    if ($test_mode === false) {
+        $test_mode = (bool)get_option('spotplayer_test_mode', false);
+    }
+
+    return [
+        'api_key'   => $api_key,
+        'level'     => $level,
+        'courses'   => $courses,
+        'test_mode' => $test_mode,
+    ];
 }
 
 add_action('woocommerce_order_status_completed', 'spl_handle_order_completed', 10, 1);
