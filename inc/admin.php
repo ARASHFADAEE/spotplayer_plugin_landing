@@ -372,7 +372,10 @@ function spotplay_render_buyer_report_field($args = null)
             . '<td>' . esc_html($name) . '</td>'
             . '<td>' . esc_html($phone) . '</td>'
             . '<td>' . esc_html($status) . '</td>'
-            . '<td>' . ($license_key ? esc_html($license_key) : '<em>' . esc_html(__('— ندارد —', 'spotplayer-landing')) . '</em>') . '</td>'
+            . '<td>' . ($license_key
+                ? '<button type="button" class="button copy-license-btn" data-license="' . esc_attr($license_key) . '">' . esc_html(__('کپی لایسنس', 'spotplayer-landing')) . '</button>'
+                : '<em>' . esc_html(__('— ندارد —', 'spotplayer-landing')) . '</em>')
+            . '</td>'
             . '<td>' . $date . '</td>'
             . '</tr>';
     }
@@ -509,7 +512,10 @@ function spotplay_buyer_report_ajax() {
             . '<td>' . esc_html($name) . '</td>'
             . '<td>' . esc_html($phone) . '</td>'
             . '<td>' . esc_html($status) . '</td>'
-            . '<td>' . ($license_key ? esc_html($license_key) : '<em>' . esc_html(__('— ندارد —', 'spotplayer-landing')) . '</em>') . '</td>'
+            . '<td>' . ($license_key
+                ? '<button type="button" class="button copy-license-btn" data-license="' . esc_attr($license_key) . '">' . esc_html(__('کپی لایسنس', 'spotplayer-landing')) . '</button>'
+                : '<em>' . esc_html(__('— ندارد —', 'spotplayer-landing')) . '</em>')
+            . '</td>'
             . '<td>' . $date . '</td>'
             . '</tr>';
     }

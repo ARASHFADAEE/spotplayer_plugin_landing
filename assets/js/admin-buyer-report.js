@@ -43,4 +43,28 @@
     submitSearch(page);
     return false;
   });
+
+  // Copy license to clipboard with feedback
+  $(document).on('click', '.copy-license-btn', function(e){
+    e.preventDefault();
+    var $btn = $(this);
+    var text = $btn.data('license');
+    if (!text) { return false; }
+    var done = function(){
+      var old = $btn.text();
+      $btn.text('کپی شد!');
+      setTimeout(function(){ $btn.text(old); }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(String(text)).then(done).catch(function(){ done(); });
+    } else {
+      var $tmp = $('<textarea>').css({position:'fixed',top:'-1000px'}).val(String(text));
+      $('body').append($tmp);
+      $tmp.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      $tmp.remove();
+      done();
+    }
+    return false;
+  });
 })(jQuery);
