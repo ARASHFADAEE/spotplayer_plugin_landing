@@ -51,6 +51,14 @@ if (class_exists('CSF')) {
                 'id'    => 'opt-coupon-spot-land',
                 'type'  => 'switcher',
                 'title' => 'وضعیت کد تخفیف',
+
+            ),
+
+
+            array(
+                'id'    => 'opt-elementor-spot-land',
+                'type'  => 'switcher',
+                'title' => 'سازگاری با المنتور',
             ),
 
 

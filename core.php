@@ -36,6 +36,9 @@ define('LAND_PLUGIN_ASSETS_URL', LAND_PLUGIN_URL . 'assets/');
 define('LAND_PLUGIN_INC', LAND_PLUGIN_DIR . 'inc/');
 
 
+$options = get_option( 'spotplay_land' ); 
+
+
 
 /**
  * include denpedenci
@@ -141,6 +144,8 @@ add_action('wp_enqueue_scripts', 'spotplayer_landing_enqueue_scripts');
 
 function land_box()
 {
+
+    global $options;
     
     include LAND_PLUGIN_INC . 'shortcode.php';
 }
@@ -394,6 +399,9 @@ function spotplayer_landing_render_report_page()
     echo '</tbody></table>';
     echo '</div>';
 }
+
+
+
 
 
 

@@ -113,49 +113,87 @@ function spl_create_license($customer_name, $courses, $phone, $is_test = false)
  */
 function spl_send_license_sms($phone, $license_key)
 {
-    $username = (string) get_option('meli_username');
-    $password = (string) get_option('meli_password');
-    $body_id  = (string) get_option('meli_body_id');
+    $options = get_option('spotplay_land');
+    $provider = is_array($options) && isset($options['opt-sms-provider']) ? (string)$options['opt-sms-provider'] : 'melipayamak';
 
     $to = preg_replace('/\D+/', '', (string) $phone);
-    if (empty($username) || empty($password) || empty($body_id) || empty($to) || empty($license_key)) {
+    if (empty($to) || empty($license_key)) {
         return '';
     }
 
-    $text = '@' . $body_id . '@' . $license_key;
-    $result = '';
+    if ($provider === 'melipayamak') {
+        $username = is_array($options) && isset($options['opt-username-melipayamak']) ? (string)$options['opt-username-melipayamak'] : '';
+        $password = is_array($options) && isset($options['opt-password-melipayamak']) ? (string)$options['opt-password-melipayamak'] : '';
+        $pattern  = is_array($options) && isset($options['opt-pattern-melipayamak']) ? (string)$options['opt-pattern-melipayamak'] : '';
 
-    try {
-        if (class_exists('SoapClient')) {
-            ini_set('soap.wsdl_cache_enabled', '0');
-            $client = new SoapClient('http://api.payamak-panel.com/post/Send.asmx?wsdl', ['encoding' => 'UTF-8']);
-            $data = [
-                'username' => $username,
-                'password' => $password,
-                'text' => $text,
-                'to' => $to,
-            ];
-            $resp = $client->SendByBaseNumber3($data);
-            if (is_object($resp) && isset($resp->SendByBaseNumber3Result)) {
-                $result = (string) $resp->SendByBaseNumber3Result;
-            }
-        } else {
-            $url = 'http://api.payamak-panel.com/post/Send.asmx/SendByBaseNumber3?' . http_build_query([
-                'username' => $username,
-                'password' => $password,
-                'text' => $text,
-                'to' => $to,
-            ]);
-            $response = wp_remote_get($url, ['timeout' => 15]);
-            if (!is_wp_error($response)) {
-                $result = (string) wp_remote_retrieve_body($response);
-            }
+        if (empty($username) || empty($password) || empty($pattern)) {
+            return '';
         }
-    } catch (Exception $e) {
-        // Silent failure; result remains empty
+
+        $text = '@' . $pattern . '@' . $license_key;
+        $result = '';
+
+        try {
+            if (class_exists('SoapClient')) {
+                ini_set('soap.wsdl_cache_enabled', '0');
+                $client = new SoapClient('http://api.payamak-panel.com/post/Send.asmx?wsdl', ['encoding' => 'UTF-8']);
+                $data = [
+                    'username' => $username,
+                    'password' => $password,
+                    'text' => $text,
+                    'to' => $to,
+                ];
+                $resp = $client->SendByBaseNumber3($data);
+                if (is_object($resp) && isset($resp->SendByBaseNumber3Result)) {
+                    $result = (string) $resp->SendByBaseNumber3Result;
+                }
+            } else {
+                $url = 'http://api.payamak-panel.com/post/Send.asmx/SendByBaseNumber3?' . http_build_query([
+                    'username' => $username,
+                    'password' => $password,
+                    'text' => $text,
+                    'to' => $to,
+                ]);
+                $response = wp_remote_get($url, ['timeout' => 15]);
+                if (!is_wp_error($response)) {
+                    $result = (string) wp_remote_retrieve_body($response);
+                }
+            }
+        } catch (Exception $e) {
+        }
+
+        return $result;
     }
 
-    return $result;
+    if ($provider === 'kavenegar') {
+        $api_key = is_array($options) && isset($options['opt-kavenegar-api_key']) ? (string)$options['opt-kavenegar-api_key'] : '';
+        $template = is_array($options) && isset($options['opt-kavenegar-pattern']) ? (string)$options['opt-kavenegar-pattern'] : '';
+
+        if (empty($api_key) || empty($template)) {
+            return '';
+        }
+
+        $endpoint = sprintf('https://api.kavenegar.com/v1/%s/verify/lookup.json', rawurlencode($api_key));
+        $query = [
+            'receptor' => $to,
+            'token'    => (string)$license_key,
+            'template' => $template,
+        ];
+        $url = $endpoint . '?' . http_build_query($query);
+
+        $result = '';
+        try {
+            $response = wp_remote_get($url, ['timeout' => 15]);
+            if (!is_wp_error($response)) {
+                $body = wp_remote_retrieve_body($response);
+                $result = (string)$body;
+            }
+        } catch (Exception $e) {
+        }
+        return $result;
+    }
+
+    return '';
 }
 
 /**

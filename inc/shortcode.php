@@ -58,9 +58,9 @@ $product_thumbnail_url = get_the_post_thumbnail_url($product_id, 'full');
                     <label for="phone" class="sr-only">شماره تماس</label>
                     <input id="phone" name="phone" type="tel" inputmode="tel" placeholder="شماره تماس" pattern="[0-9]{11}" aria-describedby="phoneHelp" required>
                 </div>
-
-
-                <?php if(!empty(get_option('is_copon')) && get_option('is_copon') === 1):?>
+        
+                
+                <?php if(!empty($options['opt-coupon-spot-land']) && $options['opt-coupon-spot-land'] == 1):?>
 
                 <div class="form-group form-inline">
                     <label for="coupon" class="sr-only">کد تخفیف</label>
