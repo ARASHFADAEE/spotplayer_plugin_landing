@@ -233,7 +233,7 @@ function spl_get_courses_option(): array
  */
 function spl_order_has_mapped_product(WC_Order $order): bool
 {
-    $mapped_product_id = absint(get_option('product_id'));
+    $mapped_product_id = spl_get_mapped_product_id();
     if (!$mapped_product_id) {
         return false;
     }
@@ -338,17 +338,40 @@ function spl_handle_order_completed($order_id)
     // Ensure user account exists
     spl_ensure_user_for_order($order);
 
+    // Pre-check settings
+    $settings = spl_get_spotplayer_settings();
+    if (empty($settings['api_key'])) {
+        $order->add_order_note(__('کلید API اسپات پلیر تنظیم نشده است؛ لایسنس ساخته نشد.', 'spotplayer-landing'));
+        $order->update_meta_data('_spotplayer_license_error', 'missing_api_key');
+        $order->save();
+        return;
+    }
+
+    $courses = spl_get_courses_option();
+    if (empty($courses)) {
+        $order->add_order_note(__('هیچ دوره‌ای در تنظیمات اسپات پلیر انتخاب نشده؛ لایسنس ساخته نشد.', 'spotplayer-landing'));
+        $order->update_meta_data('_spotplayer_license_error', 'missing_courses');
+        $order->save();
+        return;
+    }
+
+    $name = trim($order->get_formatted_billing_full_name());
+    $phone = (string)$order->get_billing_phone();
+    if ($phone === '') {
+        $order->add_order_note(__('شماره موبایل برای سفارش یافت نشد؛ لطفاً شماره را وارد و دوباره تلاش کنید.', 'spotplayer-landing'));
+        $order->update_meta_data('_spotplayer_license_error', 'missing_phone');
+        $order->save();
+        return;
+    }
+
+    // Read test mode from Codestar option, fallback to legacy option
+    $opt = get_option('spotplay_land');
+    $is_test = is_array($opt) && !empty($opt['opt-spotplayer-test_mode']) ? (bool)$opt['opt-spotplayer-test_mode'] : (bool)get_option('spotplayer_test_mode', false);
+    // Idempotency: avoid creating duplicate license if already exists
+    $license_key = (string) $order->get_meta('_spotplayer_license_key');
+
     // Create SpotPlayer license
     try {
-        $courses = spl_get_courses_option();
-        $name = trim($order->get_formatted_billing_full_name());
-        $phone = (string)$order->get_billing_phone();
-        // Read test mode from Codestar option, fallback to legacy option
-        $opt = get_option('spotplay_land');
-        $is_test = is_array($opt) && !empty($opt['opt-spotplayer-test_mode']) ? (bool)$opt['opt-spotplayer-test_mode'] : (bool)get_option('spotplayer_test_mode', false);
-        // Idempotency: avoid creating duplicate license if already exists
-        $license_key = (string) $order->get_meta('_spotplayer_license_key');
-
         if ($license_key === '') {
             $license = spl_create_license($name ?: 'customer', $courses, $phone, $is_test);
             if (is_array($license) && isset($license['key'])) {
@@ -360,6 +383,11 @@ function spl_handle_order_completed($order_id)
 
                 // Add order note with license key for admin visibility
                 $order->add_order_note(sprintf(__('کلید لایسنس ساخته شد: %s', 'spotplayer-landing'), $license_key));
+            } else {
+                $order->add_order_note(__('پاسخ نامعتبر از سرویس اسپات پلیر؛ لایسنس ساخته نشد.', 'spotplayer-landing'));
+                $order->update_meta_data('_spotplayer_license_error', 'invalid_response');
+                $order->save();
+                return;
             }
         }
 
@@ -378,7 +406,10 @@ function spl_handle_order_completed($order_id)
             }
         }
     } catch (Exception $e) {
-        // Log error but do not break order completion
+        // Surface error to admin via order note
+        $order->add_order_note(sprintf(__('خطا در ساخت لایسنس: %s', 'spotplayer-landing'), $e->getMessage()));
+        $order->update_meta_data('_spotplayer_license_error', $e->getMessage());
+        $order->save();
         if (function_exists('error_log')) {
             error_log('[SpotPlayer] License creation failed: ' . $e->getMessage());
         }
@@ -455,3 +486,56 @@ function spl_handle_status_changed($order_id, $old_status, $new_status, $order)
     }
 }
 add_action('woocommerce_order_status_changed', 'spl_handle_status_changed', 10, 4);
+
+/**
+ * Admin: add manual order action to create license.
+ */
+function spl_admin_add_license_action($actions, $order)
+{
+    if ($order instanceof WC_Order && spl_order_has_mapped_product($order)) {
+        $actions['spotplayer_create_license'] = __('ایجاد لایسنس برای این کاربر', 'spotplayer-landing');
+    }
+    return $actions;
+}
+add_filter('woocommerce_order_actions', 'spl_admin_add_license_action', 10, 2);
+
+/**
+ * Handle manual license creation action from order admin.
+ */
+function woocommerce_order_action_spotplayer_create_license($order)
+{
+    if ($order instanceof WC_Order) {
+        $order_id = $order->get_id();
+        $existing = (string) $order->get_meta('_spotplayer_license_key');
+        if ($existing !== '') {
+            $order->add_order_note(sprintf(__('لایسنس قبلاً ایجاد شده است: %s', 'spotplayer-landing'), $existing));
+            $order->save();
+            return;
+        }
+        $order->add_order_note(__('ایجاد لایسنس به‌صورت دستی آغاز شد.', 'spotplayer-landing'));
+        $order->save();
+        spl_handle_order_completed($order_id);
+        $new_key = (string) $order->get_meta('_spotplayer_license_key');
+        if ($new_key !== '') {
+            $order->add_order_note(sprintf(__('لایسنس با موفقیت ایجاد شد: %s', 'spotplayer-landing'), $new_key));
+        } else {
+            $err = (string) $order->get_meta('_spotplayer_license_error');
+            $order->add_order_note(sprintf(__('ایجاد لایسنس ناموفق بود. خطا: %s', 'spotplayer-landing'), $err ?: __('نامشخص', 'spotplayer-landing')));
+        }
+        $order->save();
+    }
+}
+add_action('woocommerce_order_action_spotplayer_create_license', 'woocommerce_order_action_spotplayer_create_license', 10, 1);
+/**
+ * Get mapped WooCommerce product ID from Codestar settings (fallback to legacy option).
+ */
+function spl_get_mapped_product_id(): int {
+    $csf = get_option('spotplay_land');
+    if (is_array($csf)) {
+        $pid = isset($csf['opt-product_id']) ? absint($csf['opt-product_id']) : 0;
+        if ($pid > 0) {
+            return $pid;
+        }
+    }
+    return absint(get_option('product_id'));
+}

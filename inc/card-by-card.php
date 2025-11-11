@@ -52,7 +52,15 @@ function spl_ajax_card_submit()
     $full_name = isset($_POST['fullName']) ? sanitize_text_field(wp_unslash($_POST['fullName'])) : '';
     $phone = isset($_POST['phone']) ? preg_replace('/\D+/', '', wp_unslash($_POST['phone'])) : '';
     $coupon = isset($_POST['coupon']) ? sanitize_text_field(wp_unslash($_POST['coupon'])) : '';
-    $product_id = absint(get_option('product_id'));
+    // Read product id from Codestar settings with legacy fallback
+    $csf = get_option('spotplay_land');
+    $product_id = 0;
+    if (is_array($csf) && !empty($csf['opt-product_id'])) {
+        $product_id = absint($csf['opt-product_id']);
+    }
+    if (!$product_id) {
+        $product_id = absint(get_option('product_id'));
+    }
 
     if (empty($full_name) || empty($phone) || !$product_id) {
         wp_send_json_error(['message' => __('اطلاعات ورودی نامعتبر است.', 'spotplayer-landing')], 400);
@@ -67,6 +75,10 @@ function spl_ajax_card_submit()
     try {
         $order = wc_create_order();
         $order->add_product($product, 1);
+        // Ensure totals reflect product price
+        if (method_exists($order, 'calculate_totals')) {
+            $order->calculate_totals();
+        }
 
         // Split full name into first/last (best effort)
         $parts = preg_split('/\s+/', trim($full_name));
