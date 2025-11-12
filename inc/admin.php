@@ -93,6 +93,23 @@ if (class_exists('CSF')) {
                 'title' => 'چت ایدی ادمین',
             ),
 
+            // Webhook secret (optional, recommended)
+            array(
+                'id'    => 'opt-telegram-secret-spot-land',
+                'type'  => 'text',
+                'title' => 'Webhook Secret (اختیاری)',
+                'desc'  => 'یک مقدار امن برای اعتبارسنجی وبهوک تلگرام تنظیم کنید.',
+                'attributes' => array('dir' => 'ltr'),
+            ),
+
+            // Admin tools: Set/Delete webhook buttons
+            array(
+                'id'       => 'opt-telegram-webhook-tools',
+                'type'     => 'callback',
+                'title'    => 'مدیریت وبهوک تلگرام',
+                'function' => 'spotplay_render_telegram_webhook_tools',
+            ),
+
 
         )
     ));
@@ -578,3 +595,95 @@ function spotplay_buyer_report_ajax() {
     wp_die();
 }
 add_action('wp_ajax_spotplay_buyer_report_search', 'spotplay_buyer_report_ajax');
+
+/**
+ * Render Telegram webhook tools (Set/Delete buttons) inside Codestar settings
+ */
+function spotplay_render_telegram_webhook_tools($args = null) {
+    if (!current_user_can('manage_options')) {
+        echo '<p>' . esc_html(__('شما دسترسی کافی برای این بخش ندارید.', 'spotplayer-landing')) . '</p>';
+        return;
+    }
+    $nonce = wp_create_nonce('spotplay_tg_admin_webhook');
+    $webhook_url = admin_url('admin-ajax.php?action=spotplay_telegram_webhook');
+
+    echo '<div class="spotplay-tg-webhook-tools">';
+    echo '<p><strong>' . esc_html(__('آدرس وبهوک', 'spotplayer-landing')) . ':</strong> ' . esc_html($webhook_url) . '</p>';
+
+    // نمایش وضعیت وبهوک فعلی از تلگرام (در صورت وجود تابع)
+    if (function_exists('spl_tg_api_request')) {
+        $info = spl_tg_api_request('getWebhookInfo', array());
+        if (is_array($info) && !empty($info['ok']) && !empty($info['result'])) {
+            $res = $info['result'];
+            $url = isset($res['url']) ? (string) $res['url'] : '';
+            $pending = isset($res['pending_update_count']) ? (int) $res['pending_update_count'] : 0;
+            $last_err = isset($res['last_error_message']) ? (string) $res['last_error_message'] : '';
+            echo '<ul style="margin:8px 0">';
+            echo '<li><strong>URL:</strong> ' . esc_html($url) . '</li>';
+            echo '<li><strong>Pending:</strong> ' . esc_html((string) $pending) . '</li>';
+            if ($last_err) { echo '<li><strong>Error:</strong> ' . esc_html($last_err) . '</li>'; }
+            echo '</ul>';
+        }
+    }
+
+    echo '<div class="buttons" style="display:flex; gap:10px; margin-top:10px">';
+    echo '<button type="button" class="button button-primary" id="spotplay-tg-set-webhook">' . esc_html(__('ثبت وبهوک', 'spotplayer-landing')) . '</button>';
+    echo '<button type="button" class="button" id="spotplay-tg-delete-webhook">' . esc_html(__('حذف وبهوک', 'spotplayer-landing')) . '</button>';
+    echo '</div>';
+    echo '<div id="spotplay-tg-webhook-result" style="margin-top:10px"></div>';
+    echo '<input type="hidden" id="spotplay-tg-webhook-nonce" value="' . esc_attr($nonce) . '" />';
+
+    echo '<script>(function($){
+        function showResult(msg, ok){
+            var el = $("#spotplay-tg-webhook-result");
+            el.text(msg).css({color: ok ? "#008000" : "#cc0000"});
+        }
+        $("#spotplay-tg-set-webhook").on("click", function(){
+            var nonce = $("#spotplay-tg-webhook-nonce").val();
+            $.post(ajaxurl, {action: "spotplay_tg_admin_set_webhook", nonce: nonce}, function(resp){
+                if(resp && resp.success){ showResult(resp.data.message || "وبهوک ثبت شد.", true); }
+                else { showResult((resp && resp.data && resp.data.message) || "خطا در ثبت وبهوک.", false); }
+            });
+        });
+        $("#spotplay-tg-delete-webhook").on("click", function(){
+            var nonce = $("#spotplay-tg-webhook-nonce").val();
+            $.post(ajaxurl, {action: "spotplay_tg_admin_delete_webhook", nonce: nonce}, function(resp){
+                if(resp && resp.success){ showResult(resp.data.message || "وبهوک حذف شد.", true); }
+                else { showResult((resp && resp.data && resp.data.message) || "خطا در حذف وبهوک.", false); }
+            });
+        });
+    })(jQuery);</script>';
+
+    echo '</div>';
+}
+
+// AJAX: Set webhook
+function spotplay_tg_admin_set_webhook_ajax(){
+    if (!current_user_can('manage_options')) { wp_send_json_error(['message' => __('عدم دسترسی', 'spotplayer-landing')]); }
+    $nonce = isset($_POST['nonce']) ? (string) $_POST['nonce'] : '';
+    if (!wp_verify_nonce($nonce, 'spotplay_tg_admin_webhook')) { wp_send_json_error(['message' => __('درخواست نامعتبر', 'spotplayer-landing')]); }
+    $url = admin_url('admin-ajax.php?action=spotplay_telegram_webhook');
+    if (function_exists('spl_tg_set_webhook')) {
+        $ok = spl_tg_set_webhook($url);
+        if (is_array($ok) && !empty($ok['ok'])) {
+            wp_send_json_success(['message' => __('وبهوک با موفقیت ثبت شد.', 'spotplayer-landing')]);
+        }
+    }
+    wp_send_json_error(['message' => __('ثبت وبهوک با خطا مواجه شد.', 'spotplayer-landing')]);
+}
+add_action('wp_ajax_spotplay_tg_admin_set_webhook', 'spotplay_tg_admin_set_webhook_ajax');
+
+// AJAX: Delete webhook
+function spotplay_tg_admin_delete_webhook_ajax(){
+    if (!current_user_can('manage_options')) { wp_send_json_error(['message' => __('عدم دسترسی', 'spotplayer-landing')]); }
+    $nonce = isset($_POST['nonce']) ? (string) $_POST['nonce'] : '';
+    if (!wp_verify_nonce($nonce, 'spotplay_tg_admin_webhook')) { wp_send_json_error(['message' => __('درخواست نامعتبر', 'spotplayer-landing')]); }
+    if (function_exists('spl_tg_api_request')) {
+        $ok = spl_tg_api_request('deleteWebhook', array());
+        if (is_array($ok) && !empty($ok['ok'])) {
+            wp_send_json_success(['message' => __('وبهوک حذف شد.', 'spotplayer-landing')]);
+        }
+    }
+    wp_send_json_error(['message' => __('حذف وبهوک با خطا مواجه شد.', 'spotplayer-landing')]);
+}
+add_action('wp_ajax_spotplay_tg_admin_delete_webhook', 'spotplay_tg_admin_delete_webhook_ajax');
