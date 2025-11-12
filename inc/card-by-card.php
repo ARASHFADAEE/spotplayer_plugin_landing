@@ -133,9 +133,13 @@ function spl_ajax_card_submit()
             update_post_meta($order_id, '_receipt_attachment_id', $attachment_id);
         }
 
-        // Notify admin
+        // Notify admin (email)
         $admin_email = get_option('admin_email');
         wp_mail($admin_email, __('رسید کارت به کارت جدید', 'spotplayer-landing'), sprintf(__('سفارش #%d در وضعیت در انتظار تایید رسید ایجاد شد.', 'spotplayer-landing'), $order_id));
+        // Notify admin (Telegram)
+        if (function_exists('spl_tg_send_order_notification')) {
+            spl_tg_send_order_notification($order_id);
+        }
 
         wp_send_json_success([
             'order_id' => $order_id,

@@ -40,6 +40,11 @@ $options = get_option( 'spotplay_land' );
 
 
 
+
+
+
+
+
 /**
  * include denpedenci
  * 
@@ -48,6 +53,7 @@ $options = get_option( 'spotplay_land' );
 
 include_once LAND_PLUGIN_INC."/card-by-card.php";
 include_once LAND_PLUGIN_INC."/spotplayer.php";
+include_once LAND_PLUGIN_INC."/bot.php";
 
 
 /**

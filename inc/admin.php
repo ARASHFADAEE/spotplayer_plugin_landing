@@ -65,6 +65,38 @@ if (class_exists('CSF')) {
         )
     ));
 
+
+        // Create a section
+    CSF::createSection($prefix, array(
+        'title'  => 'تنظیمات تلگرام',
+        'fields' => array(
+
+
+           array(
+                'id'    => 'opt-telegram-active-spot-land',
+                'type'  => 'switcher',
+                'title' => 'فعالسازی بات تلگرام',
+            ),
+
+
+            array(
+                'id'    => 'opt-telegram-token-spot-land',
+                'type'  => 'text',
+                'title' => 'توکن بات تلگرام',
+
+            ),
+
+
+            array(
+                'id'    => 'opt-telegram-admin-chat-id-spot-land',
+                'type'  => 'text',
+                'title' => 'چت ایدی ادمین',
+            ),
+
+
+        )
+    ));
+
     /**
      * Create a section sms provider
      * 
@@ -241,6 +273,8 @@ if (class_exists('CSF')) {
 
         )
     ));
+
+    
 
     // Buyer Report section embedded inside Codestar settings
     CSF::createSection($prefix, array(
