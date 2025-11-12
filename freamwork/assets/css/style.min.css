@@ -5354,3 +5354,12 @@ span.flatpickr-weekday {
         transform: translate3d(0, 0, 0)
     }
 }
+
+
+.copy-license-btn {
+    color: #ffffff !important;
+    border-color: #2271b140 !important;
+    background: #393caf !important;
+    vertical-align: top !important;
+    border-radius: 8px !important;
+}
